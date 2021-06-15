@@ -1,9 +1,0 @@
-version: '3'
-
-services:
-  fapi:
-    image: lsybc/fapi:4.0.34
-    environment:
-      - MODE=demo
-    ports:
-      - '3001:3000'
