@@ -1,38 +1,65 @@
-import express from "express";
-import { Block, BlockChain, ITransaction, Transaction } from "./models";
+import express, { Application, NextFunction } from "express";
+import asyncHandler from "./controllers/utils";
+import apiError from "./middlewares/apiError";
+import logger from "./types/logger";
 
-const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+class App {
+  public app: Application;
 
-let block = new Block();
-let chain = new BlockChain(block);
-let sessionTransactions: ITransaction[] = [];
+  public port: number;
 
-console.log(chain.blocks);
+  public baseApi: string;
 
-app.get("/chain", (req, res) => {
-  res.json(chain);
-})
+  constructor(appInit: {
+    port: number;
+    baseApi: string;
+    middleWares: any[];
+    controllers: any[];
+  }) {
+    this.app = express();
+    this.port = appInit.port;
+    this.baseApi = appInit.baseApi || "/";
 
-app.get("/chain/blocks", (req, res) => {
-  res.json(chain.blocks);
-})
+    this.middlewares(appInit.middleWares);
+    this.routes(appInit.controllers);
+    this.assets();
+    this.initializeErrorMiddleware();
+  }
 
+  private middlewares(middleWares: {
+    forEach: (arg0: (middleWare: any) => void) => void;
+  }) {
+    middleWares.forEach((middleWare) => {
+      this.app.use(middleWare);
+    });
+  }
 
-app.post("/transaction", (req, res) => {
-  console.log(req.body);
-  const {from, to, amount} = req.body;
-  const transaction = new Transaction(from, to, amount);
-  sessionTransactions = [...sessionTransactions, transaction];
-  res.json(sessionTransactions);
-})
+  private routes(controllers: {
+    forEach: (c: (controller: any) => void) => void;
+  }) {
+    controllers.forEach((controller) => {
+      this.app.use(this.baseApi, asyncHandler(controller.router));
+    });
+  }
 
-app.post("/mine", (req, res) => {
-  chain.addBlock(chain.getNextBlock(sessionTransactions));
-  sessionTransactions = [];  
-  res.json(chain);
-})
+  private assets() {
+    this.app.use(express.static("public"));
+  }
 
+  private initializeErrorMiddleware() {
+    this.app.use(
+      asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+        next();
+      })
+    );
+    this.app.use(apiError);
+  }
 
-app.listen(3000, () => { console.log("Listening on port 3000.")})
+  public listen(): void {
+    this.app.listen(this.port, () => {
+      logger.info(`App listening on the http://localhost:${this.port}`);
+    });
+  }
+}
+
+export default App;

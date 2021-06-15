@@ -1,6 +1,26 @@
-import sha256  from "js-sha256";
+import sha256 from 'js-sha256';
 
-interface IBlock {
+
+export class HttpApiException extends Error {
+  public statusCode: number;
+
+  public message: string;
+
+  constructor(statusCode: number, message: string) {
+    super(message);
+    this.statusCode = statusCode;
+    this.message = message;
+  }
+}
+
+export interface IApiError {
+  error: {
+    statusCode: number;
+    message: string;
+  };
+}
+
+export interface IBlock {
   index: number;
   hash: string;
   previousHash: string;
@@ -44,7 +64,7 @@ export class Transaction implements ITransaction {
  ) {}
 }
 
-interface IBlockChain {
+export interface IBlockChain {
   blocks: IBlock[];
   genesisBlock: IBlock;
   addBlock(block: IBlock): void;
@@ -110,4 +130,8 @@ export class BlockChain implements IBlockChain {
   }
 
 
+}
+
+export interface IControllerBase {
+  initRoutes(): void;
 }
