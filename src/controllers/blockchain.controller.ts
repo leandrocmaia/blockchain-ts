@@ -30,18 +30,17 @@ class BlockchainController implements IControllerBase {
   }
 
    index = async (req: Request, res: Response, next: NextFunction) => {
-    res.json(chain);
+    res.json(this.blockchainService.getChain());
   };
 
   getBlocks = async (req: Request, res: Response, next: NextFunction) => {
-    res.json(chain.blocks);
+    res.json(this.blockchainService.getChain().blocks);
   };
 
   saveTransactions = async (req: Request, res: Response, next: NextFunction) => {
     const {from, to, amount} = req.body;
     const transaction = new Transaction(from, to, amount);
-    sessionTransactions = [...sessionTransactions, transaction];
-    res.json(sessionTransactions);
+    res.json(this.blockchainService.addTransaction(transaction));
   };
 
   mine = async (req: Request, res: Response, next: NextFunction) => {
